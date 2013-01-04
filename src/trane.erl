@@ -16,6 +16,10 @@
          , wget_parse/1
          , wget_print/1]).
 
+sax(undefined,_Fun,_Acc) ->
+  undefined;
+sax(wrong_doc_type,_Fun,_Acc) ->
+  wrong_doc_type;
 sax(Str,Fun,Acc) ->
   parse(Str,Fun,Acc).
 
@@ -191,14 +195,26 @@ dc(Str) -> string:to_lower(Str).
 %% Parsing real pages
 wget(Url) ->
   inets:start(),
-  {ok, {_Rc, _Hdrs, Body}} = httpc:request(get, {Url, []}, [], []),
-  Body.
+  {ok, {{_Proto, ResultCode, _ResultString}, Hdrs, Body}} = httpc:request(get, {Url, []}, [], []),
+  wget_check_results(ResultCode, proplists:get_value("content-type", Hdrs), Body).
 
 wget_parse(Url) ->
   sax(wget(Url),fun(T,A)-> A++[T] end, []).
 
 wget_print(Url) ->
   io:fwrite("~s~n",[wget(Url)]).
+
+wget_check_results(Code, _MimeType, _Body) when Code >= 300 ->
+  undefined;
+wget_check_results(_Code, MimeType, Body) ->
+  [Type|_Xtra] = string:tokens(MimeType, ";"),
+  case Type of
+    "text/html" ->
+      Body;
+    _ ->
+      wrong_doc_type
+  end.
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% ad-hoc unit test
