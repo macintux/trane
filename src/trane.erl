@@ -195,7 +195,7 @@ dc(Str) -> string:to_lower(Str).
 %% Parsing real pages
 wget(Url) ->
   inets:start(),
-  {ok, {{_Proto, ResultCode, _ResultString}, Hdrs, Body}} = httpc:request(get, {Url, []}, [], []),
+  {ok, {{_Proto, ResultCode, _ResultString}, Hdrs, Body}} = httpc:request(get, {Url, [{"User-Agent", "Trane/0.1"}]}, [], []),
   wget_check_results(ResultCode, proplists:get_value("content-type", Hdrs), Body).
 
 wget_parse(Url) ->
